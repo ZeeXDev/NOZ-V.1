@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOZ - Wallet</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animated">
+        <div class="bg-circle bg-circle-1"></div>
+        <div class="bg-circle bg-circle-2"></div>
+        <div class="bg-circle bg-circle-3"></div>
+        <div class="bg-grid"></div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="notification" id="notification">
+        <div class="notification-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <span class="notification-text"></span>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <svg width="50" height="50" viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="20" fill="none" stroke="#10B981" stroke-width="4" stroke-dasharray="80" stroke-dashoffset="60">
+                    <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/>
+                </circle>
+            </svg>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <img id="userAvatar" src="https://ui-avatars.com/api/?name=User+Demo&background=1F2937&color=10B981" alt="Avatar">
+                        <div class="avatar-status"></div>
+                    </div>
+                    <div class="user-details">
+                        <h2 id="userName">User Demo</h2>
+                        <p class="user-id">ID: <span id="userId">8140299716</span></p>
+                    </div>
+                </div>
+                <div class="header-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                        <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                    </svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Title -->
+        <div class="page-title">
+            <div class="title-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                    <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1>Portefeuille</h1>
+                <p>Gérez vos balances et retraits</p>
+            </div>
+        </div>
+
+        <!-- Balances Cards -->
+        <div class="wallet-balances">
+            <div class="wallet-card noz-card">
+                <div class="wallet-card-header">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                    </svg>
+                    <span>NOZ Balance</span>
+                </div>
+                <div class="wallet-card-amount" id="nozBalance">0.0000</div>
+                <div class="wallet-card-subtitle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    <span id="nozStars">0.00</span> Telegram Stars
+                </div>
+            </div>
+
+            <div class="wallet-card kfcy-card">
+                <div class="wallet-card-header">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>KFCY Balance</span>
+                </div>
+                <div class="wallet-card-amount" id="kfcyBalance">0</div>
+                <div class="wallet-card-subtitle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span id="kfcyUsdt">0.00</span> USDT
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculator Section -->
+        <div class="calculator-section">
+            <div class="section-header">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                    <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                    <line x1="8" y1="6" x2="16" y2="6"></line>
+                    <line x1="16" y1="14" x2="16" y2="18"></line>
+                    <line x1="8" y1="14" x2="8" y2="14.01"></line>
+                    <line x1="12" y1="14" x2="12" y2="14.01"></line>
+                    <line x1="8" y1="18" x2="8" y2="18.01"></line>
+                    <line x1="12" y1="18" x2="12" y2="18.01"></line>
+                </svg>
+                <h2>Calculatrice de conversion</h2>
+            </div>
+
+            <div class="calculator-card">
+                <div class="calculator-input-group">
+                    <label for="calcType">Type de conversion</label>
+                    <select id="calcType" class="calc-select">
+                        <option value="noz">NOZ → Telegram Stars ⭐</option>
+                        <option value="kfcy">KFCY → USDT 💵</option>
+                    </select>
+                </div>
+
+                <div class="calculator-input-group">
+                    <label for="calcAmount">Montant</label>
+                    <input type="number" id="calcAmount" class="calc-input" placeholder="0.0000" step="0.0001" min="0">
+                </div>
+
+                <div class="calculator-result">
+                    <div class="result-label">Résultat de conversion</div>
+                    <div class="result-amount" id="calcResult">0.00</div>
+                    <div class="result-unit" id="calcResultUnit">⭐ Stars</div>
+                </div>
+
+                <div class="conversion-info">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span id="conversionRate">0.001 NOZ = 0.5 ⭐</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Section -->
+        <div class="withdrawal-section">
+            <div class="section-header">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+                <h2>Effectuer un retrait</h2>
+            </div>
+
+            <div class="withdrawal-card">
+                <div class="withdrawal-input-group">
+                    <label for="withdrawType">Type de retrait</label>
+                    <select id="withdrawType" class="withdraw-select">
+                        <option value="NOZ">NOZ (minimum: 25⭐)</option>
+                        <option value="KFCY">KFCY (minimum: 10 USDT)</option>
+                    </select>
+                </div>
+
+                <div class="withdrawal-input-group">
+                    <label for="withdrawAmount">Montant à retirer</label>
+                    <input type="number" id="withdrawAmount" class="withdraw-input" placeholder="0.0000" step="0.0001" min="0">
+                    <div class="input-hint" id="withdrawHint">Minimum: 0.05 NOZ (25⭐)</div>
+                </div>
+
+                <div class="withdrawal-preview" id="withdrawalPreview" style="display: none;">
+                    <div class="preview-row">
+                        <span>Type:</span>
+                        <strong id="previewType">NOZ</strong>
+                    </div>
+                    <div class="preview-row">
+                        <span>Montant:</span>
+                        <strong id="previewAmount">0.0000</strong>
+                    </div>
+                    <div class="preview-row highlight">
+                        <span>Vous recevrez:</span>
+                        <strong id="previewReceive">0.00 ⭐</strong>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="withdrawBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="8 12 12 16 16 12"></polyline>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                    </svg>
+                    <span>Demander le retrait</span>
+                    <div class="btn-shimmer"></div>
+                </button>
+
+                <div class="withdrawal-limits">
+                    <div class="limit-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Retrait NOZ: Minimum 25⭐ (0.05 NOZ)</span>
+                    </div>
+                    <div class="limit-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Retrait KFCY: Minimum 10 USDT (50,0000 KFCY)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="info-card">
+            <div class="info-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+            </div>
+            <div class="info-content">
+                <h4>À propos des retraits</h4>
+                <p>Les demandes de retrait sont traitées manuellement par l'administrateur. Vous recevrez une notification Telegram une fois votre retrait approuvé et traité. Le délai de traitement est généralement de 24-48 heures.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="index.html" class="nav-item">
+                <svg class="nav-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <span>Home</span>
+                <div class="nav-indicator"></div>
+            </a>
+
+            <a href="tasks.html" class="nav-item">
+                <svg class="nav-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                <span>Tasks</span>
+                <div class="nav-indicator"></div>
+            </a>
+
+            <a href="friends.html" class="nav-item">
+                <svg class="nav-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Friends</span>
+                <div class="nav-indicator"></div>
+            </a>
+
+            <a href="wallet.html" class="nav-item active">
+                <svg class="nav-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                    <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                </svg>
+                <span>Wallet</span>
+                <div class="nav-indicator"></div>
+            </a>
+        </div>
+    </nav>
+
+    <script src="js/telegram.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/wallet.js"></script>
+</body>
+</html>
