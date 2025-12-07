@@ -7,7 +7,7 @@ const ADSGRAM_CONFIG = {
     blockId: 'YOUR_ADSGRAM_BLOCK_ID', // ⚠️ REMPLACER PAR TON VRAI BLOCK ID
     enabled: true,
     reward: 100,
-    debug: false // ⚠️ METTRE false EN PRODUCTION
+    debug: true // ⚠️ METTRE false EN PRODUCTION
 };
 
 let adsGramController = null;
