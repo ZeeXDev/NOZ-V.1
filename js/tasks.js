@@ -1,12 +1,23 @@
 /* ===================================
-   NOZ WebApp - Tasks Logic
+   NOZ WebApp - Tasks Logic COMPLET
+   Avec intégration AdsGram RÉELLE
    =================================== */
 
 let currentUser = null;
 let adWatching = false;
+let adsgramController = null;
 
+// ⚠️ CONFIGURATION ADSGRAM - À MODIFIER
+const ADSGRAM_CONFIG = {
+    blockId: 'YOUR_BLOCK_ID_HERE', // Obtenir sur https://adsgram.ai
+    debug: true // Mettre true pour voir les logs
+};
+
+/**
+ * Initialise la page Tasks
+ */
 function initTasksPage() {
-    console.log('Initialisation de la page Tasks...');
+    console.log('📱 Initialisation page Tasks...');
 
     currentUser = window.TelegramApp.getUser();
 
@@ -15,11 +26,68 @@ function initTasksPage() {
         loadTasksData();
         setupEventListeners();
         checkDailyTask();
-        console.log('Page Tasks initialisée');
+        
+        // Initialiser AdsGram
+        initAdsGramSDK();
+        
+        console.log('✅ Page Tasks prête');
     } else {
-        console.error('Impossible de récupérer l\'utilisateur');
-        showNotification('Erreur: Impossible de charger les données');
+        console.error('❌ Utilisateur non trouvé');
+        showNotification('Erreur de chargement');
     }
+}
+
+/**
+ * Initialise le SDK AdsGram
+ */
+async function initAdsGramSDK() {
+    console.log('🎬 Initialisation AdsGram...');
+    
+    try {
+        // Attendre que window.Adsgram soit disponible
+        await waitForAdsGram();
+        
+        // Initialiser le contrôleur avec le Block ID
+        adsgramController = window.Adsgram.init({
+            blockId: ADSGRAM_CONFIG.blockId,
+            debug: ADSGRAM_CONFIG.debug
+        });
+        
+        console.log('✅ AdsGram initialisé avec Block ID:', ADSGRAM_CONFIG.blockId);
+        
+    } catch (error) {
+        console.error('❌ Erreur init AdsGram:', error);
+        console.warn('⚠️ Les pubs ne fonctionneront pas. Vérifiez votre Block ID.');
+    }
+}
+
+/**
+ * Attend que le SDK AdsGram soit chargé
+ */
+function waitForAdsGram() {
+    return new Promise((resolve, reject) => {
+        // Déjà chargé ?
+        if (window.Adsgram) {
+            resolve();
+            return;
+        }
+        
+        // Attendre max 5 secondes
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        const checkInterval = setInterval(() => {
+            attempts++;
+            
+            if (window.Adsgram) {
+                clearInterval(checkInterval);
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                reject(new Error('Timeout: AdsGram SDK non chargé'));
+            }
+        }, 100);
+    });
 }
 
 function loadUserInterface() {
@@ -30,11 +98,9 @@ function loadUserInterface() {
     if (userNameEl) {
         userNameEl.textContent = `${currentUser.first_name} ${currentUser.last_name}`;
     }
-
     if (userIdEl) {
         userIdEl.textContent = currentUser.id;
     }
-
     if (userAvatarEl) {
         userAvatarEl.src = currentUser.photo_url;
     }
@@ -50,7 +116,6 @@ function loadTasksData() {
     if (nozBalanceEl) {
         nozBalanceEl.textContent = userData.noz_balance.toFixed(2);
     }
-
     if (kfcyBalanceEl) {
         kfcyBalanceEl.textContent = userData.kfcy_balance.toFixed(0);
     }
@@ -72,12 +137,14 @@ function checkDailyTask() {
     const tasksCompleted = document.getElementById('tasksCompleted');
 
     if (!canWatch) {
+        // Pub déjà vue aujourd'hui
         if (watchAdBtn) watchAdBtn.style.display = 'none';
         if (taskStatus) taskStatus.style.display = 'none';
         if (taskTimer) taskTimer.style.display = 'flex';
         if (taskProgress) taskProgress.style.width = '100%';
         if (tasksCompleted) tasksCompleted.textContent = '1';
 
+        // Calculer temps restant
         const now = new Date();
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -91,6 +158,7 @@ function checkDailyTask() {
             timerText.textContent = `Tâche complétée ! Revenez dans ${hoursLeft}h ${minutesLeft}m`;
         }
     } else {
+        // Pub disponible
         if (watchAdBtn) watchAdBtn.style.display = 'flex';
         if (taskStatus) taskStatus.style.display = 'block';
         if (taskTimer) taskTimer.style.display = 'none';
@@ -99,11 +167,17 @@ function checkDailyTask() {
     }
 }
 
+/**
+ * Gère le clic sur "Regarder la pub"
+ */
 function handleWatchAd() {
-    if (adWatching) return;
+    if (adWatching) {
+        console.log('⚠️ Pub déjà en cours');
+        return;
+    }
 
     if (!DB.canWatchAd()) {
-        showNotification('Vous avez déjà regardé une pub aujourd\'hui !');
+        showNotification('⏰ Pub déjà vue aujourd\'hui !');
         window.TelegramApp.hapticFeedback('error');
         return;
     }
@@ -112,28 +186,8 @@ function handleWatchAd() {
     showAdLoading();
     adWatching = true;
 
-    // Utiliser AdsGram si disponible, sinon simuler
-    if (window.AdsGram && window.AdsGram.show) {
-        window.AdsGram.show()
-            .then(result => {
-                completeAdWatch();
-            })
-            .catch(error => {
-                console.error('Erreur AdsGram:', error);
-                // Si erreur, simuler quand même en dev
-                setTimeout(() => {
-                    completeAdWatch();
-                }, 2000);
-            });
-    } else {
-        // Mode simulation
-        setTimeout(() => {
-            animateProgress();
-            setTimeout(() => {
-                completeAdWatch();
-            }, 2000);
-        }, 1000);
-    }
+    // Afficher la pub AdsGram
+    showAdsGramAd();
 }
 
 function showAdLoading() {
@@ -147,8 +201,56 @@ function showAdLoading() {
                 <animate attributeName="stroke-dashoffset" values="60;0" dur="1s" repeatCount="indefinite"/>
             </circle>
         </svg>
-        <span>Chargement...</span>
+        <span>Chargement de la pub...</span>
     `;
+}
+
+/**
+ * Affiche la publicité AdsGram RÉELLE
+ */
+async function showAdsGramAd() {
+    console.log('🎬 Tentative d\'affichage pub AdsGram...');
+
+    if (!adsgramController) {
+        console.error('❌ AdsGram non initialisé');
+        showNotification('❌ AdsGram non disponible. Vérifiez votre Block ID.');
+        handleAdError({ code: 'NOT_INITIALIZED' });
+        return;
+    }
+
+    try {
+        // ⭐ APPEL RÉEL DU SDK ADSGRAM
+        await adsgramController.show();
+        
+        // Pub visionnée avec succès !
+        console.log('✅ Pub AdsGram visionnée avec succès');
+        completeAdWatch();
+        
+    } catch (error) {
+        console.error('❌ Erreur AdsGram:', error);
+        
+        // Gérer les différentes erreurs
+        let errorMessage = '❌ Erreur de pub';
+        
+        if (error && error.error) {
+            switch (error.error) {
+                case 'AdBlock':
+                    errorMessage = '❌ Désactivez votre bloqueur de publicités';
+                    break;
+                case 'NotFound':
+                    errorMessage = '⚠️ Aucune pub disponible pour le moment';
+                    break;
+                case 'InvalidBlockId':
+                    errorMessage = '❌ Block ID invalide. Contactez l\'admin.';
+                    break;
+                default:
+                    errorMessage = '❌ Erreur lors du chargement de la pub';
+            }
+        }
+        
+        showNotification(errorMessage);
+        handleAdError(error);
+    }
 }
 
 function animateProgress() {
@@ -166,6 +268,9 @@ function animateProgress() {
     }, 40);
 }
 
+/**
+ * Complète le visionnage avec succès
+ */
 function completeAdWatch() {
     const reward = 100;
     DB.recordAdWatch(reward);
@@ -174,11 +279,12 @@ function completeAdWatch() {
     loadTasksData();
 
     showSuccessAnimation();
-    showNotification(`Publicité visionnée ! +${reward} KFCY`);
+    showNotification(`✅ Pub visionnée ! +${reward} KFCY`);
     window.TelegramApp.hapticFeedback('success');
 
     adWatching = false;
 
+    // Restaurer le bouton
     const watchAdBtn = document.getElementById('watchAdBtn');
     if (watchAdBtn) {
         watchAdBtn.disabled = false;
@@ -192,14 +298,16 @@ function completeAdWatch() {
     }
 }
 
+/**
+ * Gère les erreurs de pub
+ */
 function handleAdError(error) {
-    console.error('Erreur de publicité:', error);
+    console.error('⚠️ Erreur pub:', error);
     
-    showNotification('Erreur lors du chargement de la publicité');
     window.TelegramApp.hapticFeedback('error');
-
     adWatching = false;
 
+    // Restaurer le bouton
     const watchAdBtn = document.getElementById('watchAdBtn');
     if (watchAdBtn) {
         watchAdBtn.disabled = false;
@@ -252,10 +360,7 @@ function createConfetti(color) {
     });
 
     document.body.appendChild(confetti);
-
-    setTimeout(() => {
-        confetti.remove();
-    }, duration * 1000);
+    setTimeout(() => confetti.remove(), duration * 1000);
 }
 
 function showNotification(message) {
@@ -285,7 +390,7 @@ function startTimerUpdate() {
 function handleVisibilityChange() {
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-            console.log('Page visible - vérification des tâches');
+            console.log('👁️ Page visible');
             checkDailyTask();
             loadTasksData();
         }
@@ -297,6 +402,7 @@ function refreshTasksData() {
     checkDailyTask();
 }
 
+// Initialisation
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         initTasksPage();
@@ -314,3 +420,32 @@ window.AppTasks = {
     refresh: refreshTasksData,
     watchAd: handleWatchAd
 };
+
+/* ===================================
+   📋 GUIDE D'UTILISATION ADSGRAM
+   =================================== */
+
+/*
+1. OBTENIR TON BLOCK ID:
+   - Va sur https://adsgram.ai/
+   - Connecte-toi avec ton compte Telegram
+   - Crée une nouvelle app
+   - Copie ton Block ID
+   - Remplace 'YOUR_BLOCK_ID_HERE' ligne 10
+
+2. TESTER:
+   - Met debug: true (ligne 11)
+   - Ouvre la console du navigateur
+   - Regarde les logs pour voir ce qui se passe
+
+3. ERREURS COURANTES:
+   - "AdBlock" : L'utilisateur a un bloqueur de pub
+   - "NotFound" : Aucune pub disponible (normal parfois)
+   - "InvalidBlockId" : Ton Block ID est incorrect
+   - "NOT_INITIALIZED" : Le SDK n'est pas chargé
+
+4. EN PRODUCTION:
+   - Met debug: false
+   - Teste sur plusieurs appareils
+   - Vérifie dans Telegram (pas juste navigateur)
+*/
